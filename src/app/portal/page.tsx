@@ -7,6 +7,7 @@ import {
   Bell, Upload, Download, ChevronRight, Clock, CheckCircle,
   AlertCircle, BarChart2, Settings, LogOut, User, Plus
 } from 'lucide-react'
+import { signOut } from 'next-auth/react'
 
 const navItems = [
   { icon: Home, label: 'Dashboard', id: 'dashboard' },
@@ -46,6 +47,29 @@ const invoices = [
 export default function PortalPage() {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [sidebarOpen, setSidebarOpen] = useState(true)
+  const [uploading, setUploading] = useState(false)
+
+  const handleUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return
+    const file = e.target.files[0]
+    setUploading(true)
+    
+    try {
+      const res = await fetch(`/api/upload?filename=${file.name}`, {
+        method: 'POST',
+        body: file,
+      })
+      if (res.ok) {
+        alert('File uploaded successfully! (It will appear here once DB sync is complete)')
+      } else {
+        alert('Upload failed. Please ensure Vercel Blob is connected.')
+      }
+    } catch (err) {
+      alert('Upload error.')
+    } finally {
+      setUploading(false)
+    }
+  }
 
   return (
     <div className="min-h-screen pt-20 flex" style={{ background: '#030A14' }}>
@@ -77,7 +101,7 @@ export default function PortalPage() {
           ))}
         </nav>
 
-        <button className="portal-sidebar-item w-full text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 mt-4">
+        <button onClick={() => signOut({ callbackUrl: '/portal/login' })} className="portal-sidebar-item w-full text-left text-red-400 hover:text-red-300 hover:bg-red-500/10 mt-4">
           <LogOut className="w-4 h-4" />
           Sign Out
         </button>
@@ -165,9 +189,10 @@ export default function PortalPage() {
           <div>
             <div className="flex items-center justify-between mb-8">
               <h1 className="font-display font-bold text-2xl text-white">My Documents</h1>
-              <button className="btn-primary text-sm py-2.5">
-                <Upload className="w-4 h-4" /> Upload Document
-              </button>
+              <label className="btn-primary text-sm py-2.5 cursor-pointer">
+                <Upload className="w-4 h-4" /> {uploading ? 'Uploading...' : 'Upload Document'}
+                <input type="file" className="hidden" onChange={handleUpload} disabled={uploading} />
+              </label>
             </div>
             <div className="glass-card overflow-hidden">
               <table className="w-full">

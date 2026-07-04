@@ -2,24 +2,42 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { signIn } from 'next-auth/react'
 import { Star, Eye, EyeOff, ArrowRight, Mail, Lock, Chrome, CheckCircle } from 'lucide-react'
 
 export default function LoginPage() {
+  const router = useRouter()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [showPass, setShowPass] = useState(false)
   const [remember, setRemember] = useState(false)
   const [loading, setLoading] = useState(false)
   const [loggedIn, setLoggedIn] = useState(false)
+  const [errorMsg, setErrorMsg] = useState('')
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
-    setTimeout(() => {
+    setErrorMsg('')
+    
+    const result = await signIn('credentials', {
+      redirect: false,
+      email,
+      password
+    })
+
+    if (result?.error) {
+      setErrorMsg('Invalid email or password.')
       setLoading(false)
+    } else {
       setLoggedIn(true)
-      setTimeout(() => window.location.href = '/portal', 1500)
-    }, 1500)
+      if (email === "admin@northstar.ca") {
+        setTimeout(() => router.push('/admin'), 1500)
+      } else {
+        setTimeout(() => router.push('/portal'), 1500)
+      }
+    }
   }
 
   return (
@@ -70,6 +88,13 @@ export default function LoginPage() {
                   <span className="px-4 bg-white/80 text-gray-400 text-xs font-medium uppercase tracking-wider">Or</span>
                 </div>
               </div>
+
+              {/* Error Message */}
+              {errorMsg && (
+                <div className="p-3 rounded-lg bg-red-50 border border-red-100 text-red-600 text-sm font-medium">
+                  {errorMsg}
+                </div>
+              )}
 
               {/* Email */}
               <div>
